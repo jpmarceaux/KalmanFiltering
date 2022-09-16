@@ -325,6 +325,47 @@ def setup_extended(target_model, covar, x0=None):
         filter_model.from_vector(x0)
     return ExtendedKalmanFilter(filter_model, covar)
 
+def filter_dataset(prior_model, prior_covar, dataset, circ_list, 
+                   Q_add, R_add, clip_range=[-1, 1],
+                   max_itr=1, itr_eps=1e-4,
+                   save_params_and_covars=False, save_prior_innovations=False, save_posterior_innovations=False, save_kgains=False):
+    
+    """
+    Extended filtering of the dataset in the order of the circuit list
+    
+    returns:
+        -post. model
+        -post. covar
+        -saved data in order: 
+        ((param_history, covar_history, prior_innovs, post_innovs, kgains)
+    """
+    param_history = []
+    covar_history = []
+    prior_innovs = []
+    post_innovs = []
+    kgains = []
+    
+    ekf = ExtendedKalmanFilter(prior_model.copy(), prior_covar)
+    if save_params_and_covars:
+        param_history.append(prior_model.to_vector())
+        covar_history.append(prior_covar)
+    for circ in tqdm(circ_list):
+        counts = dataset[circ].counts
+        cvec = vector_from_outcomes(counts, 2**circ.width)
+        innov, kgain = ekf.update(circ, cvec, clip_range=clip_range, Q=Q_add, R_additional=R_add, max_itr=max_itr, itr_eps=itr_eps)
+        if save_prior_innovations:
+            prior_innovs.append(innov)
+        if save_kgains:
+            kgains.append(kgain)
+        if save_posterior_innovations:
+            post_predict = vector_from_outcomes(ekf.model.probabilities(circ), 2**circ.width)
+            post_innov = cvec/sum(cvec) - post_predict
+            post_innovs.append(post_innov)
+        if save_params_and_covars:
+            param_history.append(ekf.model.to_vector())
+            covar_history.append(ekf.P)
+    return ekf.model, ekf.P, (param_history, covar_history, prior_innovs, post_innovs, kgains)
+
 def make_mle_estimates(dataset, model_pack, target_mdl, max_lengths):
     """
     find mle estimates on the dataset with increasing germ length
