@@ -100,6 +100,12 @@ def categorical_covar(prob_vec):
     """
     return np.diag(prob_vec) - np.outer(prob_vec, prob_vec)
 
+def dirichlet_covar(count_vec):
+    total_counts = sum(count_vec)
+    hdims = len(count_vec)
+    mean_frequency = ( count_vec + np.ones(hdims) )/( total_counts + hdims )
+    return 1/(total_counts + hdims + 1) * categorical_covar(mean_frequency)
+
 class ExtendedKalmanFilter():
     """
     An extended Kalman filter for gate-set tomography
@@ -209,7 +215,7 @@ class ExtendedKalmanFilter():
             p_model = p0 + jac0@prior_state + hess0@prior_state@prior_state
             
             # approximate the jacobian at the current estimate
-            jacob = matrix_from_jacob(self.model.sim.dprobs(circ), 2**circ.width)
+            jacob = jac0 + hess0@prior_state
             
             # calculate the observed frequency
             total_counts = sum(count_vec)
