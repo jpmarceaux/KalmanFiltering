@@ -47,7 +47,7 @@ def load_dict(filename):
         return pickle.load(f)
 
 from pygsti.modelpacks import smq1Q_XYZI as std
-maxLengths = [1,2,4,8,16]
+maxLengths = [1,2,4,8]
 target_model = std.target_model('H+s')
 basis1q = pygsti.baseobjs.Basis.cast('pp', 4)
 gauge_basis = pygsti.baseobjs.CompleteElementaryErrorgenBasis(
@@ -66,10 +66,8 @@ import random
 all_circuits = [circ for circ_list in edesign.circuit_lists for circ in circ_list]
 random.seed(314)
 random.shuffle(all_circuits)
-my_circuits = all_circuits[rank::size][0:2]
 
-for ind, circ in enumerate(my_circuits):
-    print(f"Rank {rank} circ_index {ind+1} of {len(my_circuits)} running circuit\n{circ}" )
+for circ in tqdm(all_circuits):
     my_jdict[circ] = matrix_from_jacob(target_model.sim.dprobs(circ), 2**circ.width)
     my_hdict[circ] = tensor_from_hessian(target_model.sim.hprobs(circ), 2**circ.width)
 
@@ -80,6 +78,6 @@ if rank==0:
 	jdict = {k: v for d in gathered_jdict for k, v in d.items()}
 	hdict = {k: v for d in gathered_hdict for k, v in d.items()}
 
-	pickle_dict(gathered_jdict, 'IXYZ_jacs')
-	pickle_dict(gathered_hdict, 'IXYZ_hess')
+	pickle_dict(jdict, 'smq1Q_XYZI_jacs')
+	pickle_dict(hdict, 'smq1Q_XYZI_hess')
 

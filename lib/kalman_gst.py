@@ -212,7 +212,7 @@ class ExtendedKalmanFilter():
         
         for itr in range(max_itr):
             # approximate predicted frequency for the circuit outcome under the model
-            p_model = p0 + jac0@prior_state + hess0@prior_state@prior_state
+            p_model = p0 + jac0@prior_state + prior_state@hess0@prior_state
             
             # approximate the jacobian at the current estimate
             jacob = jac0 + hess0@prior_state
@@ -233,7 +233,7 @@ class ExtendedKalmanFilter():
 
             # Kalman gain
             P = prior_covar + Q
-            kgain = P@jacob.T@np.linalg.pinv(jacob@P@jacob.T + R, 1e-15)
+            kgain = P@jacob.T@np.linalg.pinv(jacob@P@jacob.T + R, 1e-9)
             
             # Kalman update
             innovation = observation - p_model
