@@ -36,7 +36,7 @@ def load_dict(filename):
     with open(filename + '.pickle', 'rb') as f:
         return pickle.load(f)
 
-maxLengths = [1,2,4,8]
+maxLengths = [1,2,4,8,16]
 target_model = std.target_model('H+s')
 basis1q = pygsti.baseobjs.Basis.cast('pp', 4)
 gauge_basis = pygsti.baseobjs.CompleteElementaryErrorgenBasis(
